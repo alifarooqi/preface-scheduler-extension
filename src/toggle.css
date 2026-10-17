@@ -1,0 +1,77 @@
+/* Scoped to a Shadow DOM root inside src/content.js. Do not load as a top-level stylesheet. */
+:host {
+  all: initial;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+}
+
+.ps-host {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 2147483647;
+  /* The actual x/y translate is applied as inline transform on .ps-btn to preserve position on resize. */
+  pointer-events: auto;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.ps-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px 6px 8px;
+  border-radius: 999px;
+  background: rgba(17, 24, 39, 0.92);
+  color: #f9fafb;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.06) inset;
+  cursor: grab;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+  touch-action: none;
+}
+
+.ps-btn:hover {
+  background: rgba(31, 41, 55, 0.96);
+}
+
+.ps-btn:active,
+.ps-btn.ps-dragging {
+  cursor: grabbing;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+}
+
+.ps-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #22c55e; /* on */
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.18);
+  flex: 0 0 auto;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ps-btn[data-state="off"] .ps-dot {
+  background: #6b7280;
+  box-shadow: 0 0 0 2px rgba(107, 114, 128, 0.18);
+}
+
+.ps-label {
+  white-space: nowrap;
+}
+
+.ps-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

@@ -1,64 +1,100 @@
 # Preface Scheduler — Chrome Extension
 
-A tiny Manifest V3 Chrome extension that runs a one-shot tweak on
-[`https://nomad.preface.ai/`](https://nomad.preface.ai/): it force-shows the
+A tiny Manifest V3 Chrome extension that runs a toggleable tweak on
+[`https://nomad.preface.ai/`](https://nomad.preface.ai/): when ON, the
 Tailwind-styled list-item labels that normally only appear on hover
-(`hidden` + `group-hover:flex` -> permanently `flex`).
+(`hidden` + `group-hover:flex`) are permanently forced to `flex`;
+turning OFF reverts them.
 
 Control from a floating, draggable widget that lives on the page itself —
-no Chrome toolbar popup required.
+no toolbar icon, no popup.
 
 ```
 +----------------------+
-| ●  Preface: ON       |  <- click to toggle, drag to reposition
+| ●  ON               |  <- click to toggle, drag to reposition
 +----------------------+
 ```
 
-## Install from a CI artifact
+## Install from the latest release
 
-Each green build on `main` produces a versioned `.zip` you can load as an
-unpacked extension.
+Every green build on `main` cuts a GitHub Release and uploads the
+extension zip. The link below always points to the most recent one -
+no need to dig through the Actions tab.
 
-1. Open the repo's **Actions** tab and click the latest green **Build and
-   zip** run.
-2. Scroll to the bottom of the run page → **Artifacts** → download
-   `preface-scheduler-v<version>.zip`.
-3. Unzip it anywhere on disk.
-4. Visit `chrome://extensions` in Chrome.
-5. Toggle **Developer mode** on (top right).
-6. Click **Load unpacked** and select the unzipped folder.
-7. Open <https://nomad.preface.ai/> — a small floating chip should appear in
+**[⬇ Download the latest build](https://github.com/alifarooqi/preface-scheduler-extension/releases/latest/download/preface-scheduler.zip)**
+
+> Direct `latest` URL: <https://github.com/alifarooqi/preface-scheduler-extension/releases/latest/download/preface-scheduler.zip>
+> All releases: <https://github.com/alifarooqi/preface-scheduler-extension/releases>
+
+1. Click the link above to download `preface-scheduler.zip`.
+2. Unzip it anywhere on disk.
+3. Visit `chrome://extensions` in Chrome.
+4. Toggle **Developer mode** on (top right).
+5. Click **Load unpacked** and select the unzipped folder.
+6. Open <https://nomad.preface.ai/> — a small floating chip should appear in
    the top-left corner.
 
 > On Windows / Linux the same steps apply — only the path differs.
+
+If you want a specific historical version (e.g. to compare behaviour),
+open the [Releases page](https://github.com/alifarooqi/preface-scheduler-extension/releases)
+and grab the versioned `preface-scheduler-v<version>.zip` asset from the
+release of interest, or pull a particular build's
+`preface-scheduler-v<version>` artifact from the **Actions** tab.
 
 ## How it works
 
 - Manifest V3, single content script (`src/content.js`).
 - The widget lives inside a closed **Shadow DOM** so page CSS (Tailwind in
   particular) can't bleed into it.
+- The chip is positioned via inline styles on the host `<div>` (shadow-DOM
+  CSS can't reach the host), is **draggable** anywhere on the viewport
+  (position clamped to the edges and persisted), and defaults to a low
+  opacity that goes fully opaque on hover.
+- The visible label is just `ON` / `OFF`. Hovering shows a native tooltip
+  via the HTML `title` attribute with the full "Availability: ON/OFF"
+  wording.
+- The label has a `min-width` so toggling between the two- and three-char
+  states doesn't reflow the chip.
 - Enabled/disabled state is stored in `chrome.storage.sync` so it follows
   you across signed-in Chrome devices.
 - Button position is stored in `chrome.storage.local` — per-device, not
   synced.
 - When enabled, the script polls for the target `<span>` elements up to
-  5 seconds, then runs the snippet exactly once. No MutationObserver, no
-  continuous re-application.
+  5 seconds on initial load, then applies the ON state (swap `hidden` ->
+  `flex`) once. No MutationObserver, no continuous re-application.
+- Toggling the chip re-applies immediately: ON removes `hidden` and adds
+  `flex`; OFF does the reverse.
 
 ### Snippet that's run on the page
+
+The matched `<span>`s are cached in `matches` so both toggle directions
+can find them after the ON pass has stripped `hidden`:
 
 ```js
 const SELECTOR =
   'span[class~="hidden"][class~="w-full"][class~="min-w-0"][class~="flex-col"]' +
   '[class~="items-start"][class~="gap-0.5"][class~="group-hover:flex"]';
 
-document.querySelectorAll(SELECTOR).forEach((el) => {
-  el.classList.remove('hidden');
-  el.classList.add('flex');
-});
+let matches = null;
+
+function applyState({ enabled }) {
+  if (!matches || matches.length === 0) {
+    matches = document.querySelectorAll(SELECTOR);
+  }
+  matches.forEach((el) => {
+    if (enabled) {
+      el.classList.remove('hidden');
+      el.classList.add('flex');
+    } else {
+      el.classList.add('hidden');
+      el.classList.remove('flex');
+    }
+  });
+}
 ```
 
-Edit `SELECTOR` / the body of `runSnippet` in `src/content.js` to point the
+Edit `SELECTOR` / the body of `applyState` in `src/content.js` to point the
 extension at any other on-page tweak.
 
 ## Local development
@@ -72,7 +108,7 @@ cd preface-scheduler-extension
 2. Toggle **Developer mode** on.
 3. **Load unpacked** → point at the cloned folder (not the CI zip, it has
    the same contents).
-4. Edit `src/content.js` / `src/toggle.css` / `manifest.json`, then hit
+4. Edit `src/content.js` / `manifest.json`, then hit
    the reload icon on the extension's card in `chrome://extensions` and
    refresh the `nomad.preface.ai` tab.
 
@@ -84,15 +120,19 @@ There is no build step and no `node_modules` — it's plain JS.
 - Reads `version` from `manifest.json`.
 - For push builds: bumps the patch segment (`0.1.0` → `0.1.1`), writes it
   back to `manifest.json`, and auto-commits the bump.
-- Zips the extension into `preface-scheduler-v<version>.zip` (excluding
-  `.git`, `.github`, docs, gitignore) and uploads it as a workflow
-  artifact.
+- Zips the extension twice — once as `preface-scheduler-v<version>.zip`
+  (versioned, lives in the Actions artifact) and once as
+  `preface-scheduler.zip` (stable name, lives as a release asset).
+- Creates (or updates) a GitHub Release `v<version>` and attaches
+  `preface-scheduler.zip` to it. The README's "Download the latest
+  build" link uses GitHub's `/releases/latest/download/<filename>` URL,
+  which always resolves to the most recent release.
 - Concurrency is keyed on the ref so simultaneous pushes don't fight over
   the version.
 
-To cut a release manually, just edit the `version` field in
-`manifest.json`, push to `main`, and the next workflow run will respect
-it (and then bump it again on the run after).
+To cut a manual release, just edit the `version` field in
+`manifest.json` to e.g. `1.0.0`, push to `main`, and the next workflow
+run will respect it (and then auto-bump to `1.0.1` on the run after).
 
 ## Privacy
 
@@ -113,7 +153,7 @@ it (and then bump it again on the run after).
 │   └── icon128.png
 ├── src/
 │   ├── content.js        # toggle widget + the run-once snippet
-│   └── toggle.css        # styles, loaded into the shadow root only
+│   └── content.js        # toggle widget (shadow DOM) + the run-once snippet + inlined styles
 ├── manifest.json
 ├── README.md
 ├── LICENSE

@@ -46,6 +46,11 @@ jobs:
           unzip -l "$OUT" | grep -E '(manifest\.json|src/content\.js|icons/icon128\.png)' >&2
           echo "Created $OUT"
           ls -la "$OUT"
+          # Mirror under a stable filename for the GitHub Release asset, so
+          # /releases/latest/download/preface-scheduler.zip stays a valid
+          # link regardless of the version that was just shipped.
+          cp "$OUT" "preface-scheduler.zip"
+          echo "Created preface-scheduler.zip (stable mirror for release)"
 
       - name: Bump patch version (push only)
         if: github.event_name == 'push'
@@ -78,3 +83,22 @@ jobs:
           path: preface-scheduler-v${{ steps.version.outputs.version }}.zip
           if-no-files-found: error
           retention-days: 30
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: "Preface Scheduler v${{ steps.version.outputs.version }}"
+          body: |
+            Auto-built by the **Build and zip** workflow.
+
+            - Manifest version: `${{ steps.version.outputs.version }}`
+            - Trigger: `${{ github.event_name }}`
+            - Commit: `${{ github.sha }}`
+          files: preface-scheduler.zip
+          # Fail loudly if the stable-name zip is missing - a release
+          # without an asset would break the /releases/latest link.
+          fail_on_unmatched_files: true
+          generate_release_notes: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -41,6 +41,7 @@ jobs:
                '.github/*' \
                '.gitignore' \
                '*.zip' \
+               'docs/*' \
             >/dev/null
           # Sanity-check that the manifest and at least one source file made it in.
           unzip -l "$OUT" | grep -E '(manifest\.json|src/content\.js|icons/icon128\.png)' >&2

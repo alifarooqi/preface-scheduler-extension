@@ -126,8 +126,14 @@
 .ps-label {
   white-space: nowrap;
   display: inline-block;
-  min-width: 3ch;
+  /* Pin the width explicitly. min-width alone is a floor: if "OFF" measures
+     wider than 3ch in the user's font, the box would still grow past the
+     floor and the chip would reflow on toggle. A fixed width (with
+     flex-shrink: 0 as belt-and-braces) keeps it stable regardless. */
+  width: 4ch;
+  min-width: 4ch;
   text-align: center;
+  flex-shrink: 0;
 }
 
 .ps-sr {

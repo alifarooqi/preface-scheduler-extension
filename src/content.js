@@ -46,6 +46,92 @@
   }
 
   // ---------------------------------------------------------------------------
+  // Styles inlined as a string so the content script never has to make a
+  // fetch() / chrome.runtime.getURL() round-trip. The previous implementation
+  // did exactly that and surfaced "GET chrome-extension://invalid/ net::ERR_FAILED"
+  // because MV3 content scripts can't reliably fetch their own bundled
+  // resources unless they're listed in web_accessible_resources — and we
+  // don't want a public css URL. Inlining is the standard MV3 workaround.
+  // ---------------------------------------------------------------------------
+  const TOGGLE_CSS = `
+:host {
+  all: initial;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+}
+
+.ps-host {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 2147483647;
+  pointer-events: auto;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.ps-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px 6px 8px;
+  border-radius: 999px;
+  background: rgba(17, 24, 39, 0.92);
+  color: #f9fafb;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.06) inset;
+  cursor: grab;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+  touch-action: none;
+}
+
+.ps-btn:hover {
+  background: rgba(31, 41, 55, 0.96);
+}
+
+.ps-btn:active,
+.ps-btn.ps-dragging {
+  cursor: grabbing;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+}
+
+.ps-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.18);
+  flex: 0 0 auto;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ps-btn[data-state="off"] .ps-dot {
+  background: #6b7280;
+  box-shadow: 0 0 0 2px rgba(107, 114, 128, 0.18);
+}
+
+.ps-label {
+  white-space: nowrap;
+}
+
+.ps-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+`;
+
+  // ---------------------------------------------------------------------------
   // Toggle widget — Shadow DOM host, drag, persist state + position.
   // ---------------------------------------------------------------------------
   const STORAGE_STATE = 'preface-scheduler:enabled'; // chrome.storage.sync
@@ -53,17 +139,9 @@
   const DRAG_THRESHOLD = 4; // px — clicks below this count as toggle, above as drag
 
   function loadCssInto(host) {
-    const url = chrome.runtime.getURL('src/toggle.css');
-    return fetch(url)
-      .then((r) => r.text())
-      .then((css) => {
-        const style = document.createElement('style');
-        style.textContent = css;
-        host.appendChild(style);
-      })
-      .catch(() => {
-        // Fall back to no styling rather than failing the widget entirely.
-      });
+    const style = document.createElement('style');
+    style.textContent = TOGGLE_CSS;
+    host.appendChild(style);
   }
 
   function clampPosition(x, y) {
@@ -146,7 +224,6 @@
       if (dragging) {
         const next = clampPosition(startTx + dx, startTy + dy);
         host.style.transform = `translate(${next.x}px, ${next.y}px)`;
-        // Suppress the synthetic click that follows a drag.
         e.preventDefault();
       }
     });
@@ -170,7 +247,6 @@
       const next = btn.dataset.state !== 'on';
       syncUi(next);
       chrome.storage.sync.set({ [STORAGE_STATE]: next });
-      // Persist drag position only when we actually moved.
       if (dragging) {
         const m = /translate\(([-\d.]+)px,\s*([-\d.]+)px\)/.exec(host.style.transform);
         if (m) {
@@ -214,7 +290,7 @@
       savedPos: pos,
     });
 
-    await loadCssInto(root);
+    loadCssInto(root);
 
     // Defer the DOM mount until body exists so we never race SPA hydration.
     (document.body || document.documentElement).appendChild(host);

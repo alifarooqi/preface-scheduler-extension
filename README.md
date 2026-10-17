@@ -72,7 +72,7 @@ cd preface-scheduler-extension
 2. Toggle **Developer mode** on.
 3. **Load unpacked** → point at the cloned folder (not the CI zip, it has
    the same contents).
-4. Edit `src/content.js` / `src/toggle.css` / `manifest.json`, then hit
+4. Edit `src/content.js` / `manifest.json`, then hit
    the reload icon on the extension's card in `chrome://extensions` and
    refresh the `nomad.preface.ai` tab.
 
@@ -113,7 +113,7 @@ it (and then bump it again on the run after).
 │   └── icon128.png
 ├── src/
 │   ├── content.js        # toggle widget + the run-once snippet
-│   └── toggle.css        # styles, loaded into the shadow root only
+│   └── content.js        # toggle widget (shadow DOM) + the run-once snippet + inlined styles
 ├── manifest.json
 ├── README.md
 ├── LICENSE

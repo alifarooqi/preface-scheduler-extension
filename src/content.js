@@ -271,6 +271,10 @@
         const next = clampPosition(startTx + dx, startTy + dy);
         host.style.transform = `translate(${next.x}px, ${next.y}px)`;
         e.preventDefault();
+        // Persist as we drag so a refresh - or a sudden tab close in the
+        // middle of a drag - lands on the new spot rather than snapping
+        // back. Writes are tiny + local; the runtime batches them.
+        chrome.storage.local.set({ [STORAGE_POS]: next });
       }
     });
 
@@ -287,6 +291,8 @@
       e.preventDefault();
       e.stopPropagation();
       if (moved >= DRAG_THRESHOLD) {
+        // Drag just ended; pointermove already persisted the new
+        // position. Don't let this synthesise a toggle click on top.
         moved = 0;
         return;
       }
@@ -296,16 +302,6 @@
       // Apply the matching DOM tweak immediately so the page reflects the
       // new state without waiting for a reload.
       applyState({ enabled: next });
-      if (dragging) {
-        const m = /translate\(([-\d.]+)px,\s*([-\d.]+)px\)/.exec(
-          host.style.transform,
-        );
-        if (m) {
-          chrome.storage.local.set({
-            [STORAGE_POS]: { x: parseFloat(m[1]), y: parseFloat(m[2]) },
-          });
-        }
-      }
       dragging = false;
       moved = 0;
     });

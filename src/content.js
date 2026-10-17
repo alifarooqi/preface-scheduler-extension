@@ -125,6 +125,9 @@
 
 .ps-label {
   white-space: nowrap;
+  display: inline-block;
+  min-width: 3ch;
+  text-align: center;
 }
 
 .ps-sr {
@@ -216,7 +219,8 @@
     const syncUi = (enabled) => {
       btn.dataset.state = enabled ? "on" : "off";
       btn.setAttribute("aria-pressed", String(enabled));
-      label.textContent = enabled ? "Availability: ON" : "Availability: OFF";
+      btn.title = enabled ? "Availability: ON" : "Availability: OFF";
+      label.textContent = enabled ? "ON" : "OFF";
       sr.textContent = enabled
         ? "Availability is on. Hidden labels are shown. Click to turn off."
         : "Availability is off. Hidden labels are hidden. Click to turn on.";

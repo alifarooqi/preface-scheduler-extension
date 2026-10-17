@@ -11,7 +11,7 @@ no Chrome toolbar popup required.
 
 ```
 +----------------------+
-| ●  Availability: ON  |  <- click to toggle, drag to reposition
+| ●  ON               |  <- click to toggle, drag to reposition
 +----------------------+
 ```
 
@@ -38,6 +38,15 @@ unpacked extension.
 - Manifest V3, single content script (`src/content.js`).
 - The widget lives inside a closed **Shadow DOM** so page CSS (Tailwind in
   particular) can't bleed into it.
+- The chip is positioned via inline styles on the host `<div>` (shadow-DOM
+  CSS can't reach the host), is **draggable** anywhere on the viewport
+  (position clamped to the edges and persisted), and defaults to a low
+  opacity that goes fully opaque on hover.
+- The visible label is just `ON` / `OFF`. Hovering shows a native tooltip
+  via the HTML `title` attribute with the full "Availability: ON/OFF"
+  wording.
+- The label has a `min-width` so toggling between the two- and three-char
+  states doesn't reflow the chip.
 - Enabled/disabled state is stored in `chrome.storage.sync` so it follows
   you across signed-in Chrome devices.
 - Button position is stored in `chrome.storage.local` — per-device, not

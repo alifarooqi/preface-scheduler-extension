@@ -9,11 +9,7 @@ turning OFF reverts them.
 Control from a floating, draggable widget that lives on the page itself —
 no toolbar icon, no popup.
 
-```
-+----------------------+
-| ●  ON               |  <- click to toggle, drag to reposition
-+----------------------+
-```
+![Demo — toggle ON/OFF, drag to reposition](docs/demo.gif)
 
 ## Install from the latest release
 
@@ -146,13 +142,14 @@ run will respect it (and then auto-bump to `1.0.1` on the run after).
 ```
 .
 ├── .github/workflows/build.yml
+├── docs/
+│   └── demo.gif          # screen recording embedded in this README
 ├── icons/
 │   ├── icon16.png
 │   ├── icon32.png
 │   ├── icon48.png
 │   └── icon128.png
 ├── src/
-│   ├── content.js        # toggle widget + the run-once snippet
 │   └── content.js        # toggle widget (shadow DOM) + the run-once snippet + inlined styles
 ├── manifest.json
 ├── README.md

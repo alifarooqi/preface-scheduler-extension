@@ -11,7 +11,7 @@ no Chrome toolbar popup required.
 
 ```
 +----------------------+
-| ●  Preface: ON       |  <- click to toggle, drag to reposition
+| ●  Availability: ON  |  <- click to toggle, drag to reposition
 +----------------------+
 ```
 

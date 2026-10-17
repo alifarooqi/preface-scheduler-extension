@@ -201,10 +201,10 @@
     const syncUi = (enabled) => {
       btn.dataset.state = enabled ? "on" : "off";
       btn.setAttribute("aria-pressed", String(enabled));
-      label.textContent = enabled ? "Preface: ON" : "Preface: OFF";
+      label.textContent = enabled ? "Availability: ON" : "Availability: OFF";
       sr.textContent = enabled
-        ? "Preface Scheduler is on. Click to turn off."
-        : "Preface Scheduler is off. Click to turn on.";
+        ? "Availability is on. Hidden labels are shown. Click to turn off."
+        : "Availability is off. Hidden labels are hidden. Click to turn on.";
     };
 
     syncUi(initialEnabled);

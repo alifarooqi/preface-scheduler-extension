@@ -15,23 +15,32 @@ no toolbar icon, no popup.
 +----------------------+
 ```
 
-## Install from a CI artifact
+## Install from the latest release
 
-Each green build on `main` produces a versioned `.zip` you can load as an
-unpacked extension.
+Every green build on `main` cuts a GitHub Release and uploads the
+extension zip. The link below always points to the most recent one -
+no need to dig through the Actions tab.
 
-1. Open the repo's **Actions** tab and click the latest green **Build and
-   zip** run.
-2. Scroll to the bottom of the run page → **Artifacts** → download
-   `preface-scheduler-v<version>.zip`.
-3. Unzip it anywhere on disk.
-4. Visit `chrome://extensions` in Chrome.
-5. Toggle **Developer mode** on (top right).
-6. Click **Load unpacked** and select the unzipped folder.
-7. Open <https://nomad.preface.ai/> — a small floating chip should appear in
+**[⬇ Download the latest build](https://github.com/alifarooqi/preface-scheduler-extension/releases/latest/download/preface-scheduler.zip)**
+
+> Direct `latest` URL: <https://github.com/alifarooqi/preface-scheduler-extension/releases/latest/download/preface-scheduler.zip>
+> All releases: <https://github.com/alifarooqi/preface-scheduler-extension/releases>
+
+1. Click the link above to download `preface-scheduler.zip`.
+2. Unzip it anywhere on disk.
+3. Visit `chrome://extensions` in Chrome.
+4. Toggle **Developer mode** on (top right).
+5. Click **Load unpacked** and select the unzipped folder.
+6. Open <https://nomad.preface.ai/> — a small floating chip should appear in
    the top-left corner.
 
 > On Windows / Linux the same steps apply — only the path differs.
+
+If you want a specific historical version (e.g. to compare behaviour),
+open the [Releases page](https://github.com/alifarooqi/preface-scheduler-extension/releases)
+and grab the versioned `preface-scheduler-v<version>.zip` asset from the
+release of interest, or pull a particular build's
+`preface-scheduler-v<version>` artifact from the **Actions** tab.
 
 ## How it works
 
@@ -111,15 +120,19 @@ There is no build step and no `node_modules` — it's plain JS.
 - Reads `version` from `manifest.json`.
 - For push builds: bumps the patch segment (`0.1.0` → `0.1.1`), writes it
   back to `manifest.json`, and auto-commits the bump.
-- Zips the extension into `preface-scheduler-v<version>.zip` (excluding
-  `.git`, `.github`, docs, gitignore) and uploads it as a workflow
-  artifact.
+- Zips the extension twice — once as `preface-scheduler-v<version>.zip`
+  (versioned, lives in the Actions artifact) and once as
+  `preface-scheduler.zip` (stable name, lives as a release asset).
+- Creates (or updates) a GitHub Release `v<version>` and attaches
+  `preface-scheduler.zip` to it. The README's "Download the latest
+  build" link uses GitHub's `/releases/latest/download/<filename>` URL,
+  which always resolves to the most recent release.
 - Concurrency is keyed on the ref so simultaneous pushes don't fight over
   the version.
 
-To cut a release manually, just edit the `version` field in
-`manifest.json`, push to `main`, and the next workflow run will respect
-it (and then bump it again on the run after).
+To cut a manual release, just edit the `version` field in
+`manifest.json` to e.g. `1.0.0`, push to `main`, and the next workflow
+run will respect it (and then auto-bump to `1.0.1` on the run after).
 
 ## Privacy
 

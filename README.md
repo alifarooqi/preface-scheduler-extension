@@ -50,13 +50,21 @@ unpacked extension.
 
 ### Snippet that's run on the page
 
+The matched `<span>`s are cached in `matches` so both toggle directions
+can find them after the ON pass has stripped `hidden`:
+
 ```js
 const SELECTOR =
   'span[class~="hidden"][class~="w-full"][class~="min-w-0"][class~="flex-col"]' +
   '[class~="items-start"][class~="gap-0.5"][class~="group-hover:flex"]';
 
+let matches = null;
+
 function applyState({ enabled }) {
-  document.querySelectorAll(SELECTOR).forEach((el) => {
+  if (!matches || matches.length === 0) {
+    matches = document.querySelectorAll(SELECTOR);
+  }
+  matches.forEach((el) => {
     if (enabled) {
       el.classList.remove('hidden');
       el.classList.add('flex');

@@ -15,7 +15,7 @@
  */
 
 (() => {
-  'use strict';
+  "use strict";
 
   // ---------------------------------------------------------------------------
   // The DOM tweak the extension applies on the page.
@@ -29,27 +29,35 @@
   const SELECTOR =
     'span[class~="hidden"][class~="w-full"][class~="min-w-0"][class~="flex-col"]' +
     '[class~="items-start"][class~="gap-0.5"][class~="group-hover:flex"]';
+  let matches = null;
 
   function applyState({ enabled }) {
-    const matches = document.querySelectorAll(SELECTOR);
+    if (!matches || matches.length === 0) {
+      matches = document.querySelectorAll(SELECTOR);
+    }
+
     matches.forEach((el) => {
       if (enabled) {
-        el.classList.remove('hidden');
-        el.classList.add('flex');
+        el.classList.remove("hidden");
+        el.classList.add("flex");
       } else {
-        el.classList.add('hidden');
-        el.classList.remove('flex');
+        el.classList.add("hidden");
+        el.classList.remove("flex");
       }
     });
     return matches.length;
   }
 
-  function waitForTargetsAndRun({ enabled, timeoutMs = 5000, intervalMs = 50 } = {}) {
+  function waitForTargetsAndRun({
+    enabled,
+    timeoutMs = 5000,
+    intervalMs = 50,
+  } = {}) {
     return new Promise((resolve) => {
       const start = Date.now();
       const tick = () => {
-        if (applyState({ enabled }) > 0) return resolve('matched');
-        if (Date.now() - start >= timeoutMs) return resolve('timeout');
+        if (applyState({ enabled }) > 0) return resolve("matched");
+        if (Date.now() - start >= timeoutMs) return resolve("timeout");
         setTimeout(tick, intervalMs);
       };
       tick();
@@ -145,12 +153,12 @@
   // ---------------------------------------------------------------------------
   // Toggle widget — Shadow DOM host, drag, persist state + position.
   // ---------------------------------------------------------------------------
-  const STORAGE_STATE = 'preface-scheduler:enabled'; // chrome.storage.sync
-  const STORAGE_POS = 'preface-scheduler:pos';       // chrome.storage.local
+  const STORAGE_STATE = "preface-scheduler:enabled"; // chrome.storage.sync
+  const STORAGE_POS = "preface-scheduler:pos"; // chrome.storage.local
   const DRAG_THRESHOLD = 4; // px — clicks below this count as toggle, above as drag
 
   function loadCssInto(host) {
-    const style = document.createElement('style');
+    const style = document.createElement("style");
     style.textContent = TOGGLE_CSS;
     host.appendChild(style);
   }
@@ -166,24 +174,24 @@
   }
 
   function buildWidget({ initialEnabled, savedPos }) {
-    const host = document.createElement('div');
-    host.className = 'ps-host';
+    const host = document.createElement("div");
+    host.className = "ps-host";
     host.style.transform = `translate(${savedPos.x}px, ${savedPos.y}px)`;
 
-    const root = host.attachShadow({ mode: 'closed' });
+    const root = host.attachShadow({ mode: "closed" });
 
-    const btn = document.createElement('button');
-    btn.className = 'ps-btn';
-    btn.type = 'button';
-    btn.setAttribute('aria-pressed', String(initialEnabled));
-    btn.dataset.state = initialEnabled ? 'on' : 'off';
+    const btn = document.createElement("button");
+    btn.className = "ps-btn";
+    btn.type = "button";
+    btn.setAttribute("aria-pressed", String(initialEnabled));
+    btn.dataset.state = initialEnabled ? "on" : "off";
 
-    const dot = document.createElement('span');
-    dot.className = 'ps-dot';
-    const label = document.createElement('span');
-    label.className = 'ps-label';
-    const sr = document.createElement('span');
-    sr.className = 'ps-sr';
+    const dot = document.createElement("span");
+    dot.className = "ps-dot";
+    const label = document.createElement("span");
+    label.className = "ps-label";
+    const sr = document.createElement("span");
+    sr.className = "ps-sr";
 
     btn.appendChild(dot);
     btn.appendChild(label);
@@ -191,12 +199,12 @@
     root.appendChild(btn);
 
     const syncUi = (enabled) => {
-      btn.dataset.state = enabled ? 'on' : 'off';
-      btn.setAttribute('aria-pressed', String(enabled));
-      label.textContent = enabled ? 'Preface: ON' : 'Preface: OFF';
+      btn.dataset.state = enabled ? "on" : "off";
+      btn.setAttribute("aria-pressed", String(enabled));
+      label.textContent = enabled ? "Preface: ON" : "Preface: OFF";
       sr.textContent = enabled
-        ? 'Preface Scheduler is on. Click to turn off.'
-        : 'Preface Scheduler is off. Click to turn on.';
+        ? "Preface Scheduler is on. Click to turn off."
+        : "Preface Scheduler is off. Click to turn on.";
     };
 
     syncUi(initialEnabled);
@@ -210,27 +218,29 @@
     let dragging = false;
     let pointerId = null;
 
-    btn.addEventListener('pointerdown', (e) => {
+    btn.addEventListener("pointerdown", (e) => {
       if (e.button !== undefined && e.button !== 0) return;
       pointerId = e.pointerId;
       btn.setPointerCapture(pointerId);
       pressX = e.clientX;
       pressY = e.clientY;
-      const m = /translate\(([-\d.]+)px,\s*([-\d.]+)px\)/.exec(host.style.transform);
+      const m = /translate\(([-\d.]+)px,\s*([-\d.]+)px\)/.exec(
+        host.style.transform,
+      );
       startTx = m ? parseFloat(m[1]) : 0;
       startTy = m ? parseFloat(m[2]) : 0;
       moved = 0;
       dragging = false;
     });
 
-    btn.addEventListener('pointermove', (e) => {
+    btn.addEventListener("pointermove", (e) => {
       if (pointerId === null || e.pointerId !== pointerId) return;
       const dx = e.clientX - pressX;
       const dy = e.clientY - pressY;
       moved = Math.max(moved, Math.hypot(dx, dy));
       if (!dragging && moved >= DRAG_THRESHOLD) {
         dragging = true;
-        btn.classList.add('ps-dragging');
+        btn.classList.add("ps-dragging");
       }
       if (dragging) {
         const next = clampPosition(startTx + dx, startTy + dy);
@@ -242,27 +252,29 @@
     const releasePointer = (e) => {
       if (pointerId === null || e.pointerId !== pointerId) return;
       pointerId = null;
-      btn.classList.remove('ps-dragging');
+      btn.classList.remove("ps-dragging");
     };
-    btn.addEventListener('pointerup', releasePointer);
-    btn.addEventListener('pointercancel', releasePointer);
+    btn.addEventListener("pointerup", releasePointer);
+    btn.addEventListener("pointercancel", releasePointer);
 
     // Toggle on plain click; suppress clicks that followed a drag.
-    btn.addEventListener('click', (e) => {
+    btn.addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
       if (moved >= DRAG_THRESHOLD) {
         moved = 0;
         return;
       }
-      const next = btn.dataset.state !== 'on';
+      const next = btn.dataset.state !== "on";
       syncUi(next);
       chrome.storage.sync.set({ [STORAGE_STATE]: next });
       // Apply the matching DOM tweak immediately so the page reflects the
       // new state without waiting for a reload.
       applyState({ enabled: next });
       if (dragging) {
-        const m = /translate\(([-\d.]+)px,\s*([-\d.]+)px\)/.exec(host.style.transform);
+        const m = /translate\(([-\d.]+)px,\s*([-\d.]+)px\)/.exec(
+          host.style.transform,
+        );
         if (m) {
           chrome.storage.local.set({
             [STORAGE_POS]: { x: parseFloat(m[1]), y: parseFloat(m[2]) },
@@ -274,8 +286,10 @@
     });
 
     // Keep within viewport on resize.
-    window.addEventListener('resize', () => {
-      const m = /translate\(([-\d.]+)px,\s*([-\d.]+)px\)/.exec(host.style.transform);
+    window.addEventListener("resize", () => {
+      const m = /translate\(([-\d.]+)px,\s*([-\d.]+)px\)/.exec(
+        host.style.transform,
+      );
       if (!m) return;
       const next = clampPosition(parseFloat(m[1]), parseFloat(m[2]));
       host.style.transform = `translate(${next.x}px, ${next.y}px)`;
@@ -311,7 +325,7 @@
 
     // React to state changes from other tabs / popups.
     chrome.storage.onChanged.addListener((changes, area) => {
-      if (area === 'sync' && changes[STORAGE_STATE]) {
+      if (area === "sync" && changes[STORAGE_STATE]) {
         syncUi(Boolean(changes[STORAGE_STATE].newValue));
       }
     });
@@ -322,8 +336,8 @@
     }
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init, { once: true });
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init, { once: true });
   } else {
     init();
   }

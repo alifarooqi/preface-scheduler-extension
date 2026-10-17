@@ -1,9 +1,10 @@
 # Preface Scheduler — Chrome Extension
 
-A tiny Manifest V3 Chrome extension that runs a one-shot tweak on
-[`https://nomad.preface.ai/`](https://nomad.preface.ai/): it force-shows the
+A tiny Manifest V3 Chrome extension that runs a toggleable tweak on
+[`https://nomad.preface.ai/`](https://nomad.preface.ai/): when ON, the
 Tailwind-styled list-item labels that normally only appear on hover
-(`hidden` + `group-hover:flex` -> permanently `flex`).
+(`hidden` + `group-hover:flex`) are permanently forced to `flex`;
+turning OFF reverts them.
 
 Control from a floating, draggable widget that lives on the page itself —
 no Chrome toolbar popup required.
@@ -42,8 +43,10 @@ unpacked extension.
 - Button position is stored in `chrome.storage.local` — per-device, not
   synced.
 - When enabled, the script polls for the target `<span>` elements up to
-  5 seconds, then runs the snippet exactly once. No MutationObserver, no
-  continuous re-application.
+  5 seconds on initial load, then applies the ON state (swap `hidden` ->
+  `flex`) once. No MutationObserver, no continuous re-application.
+- Toggling the chip re-applies immediately: ON removes `hidden` and adds
+  `flex`; OFF does the reverse.
 
 ### Snippet that's run on the page
 
@@ -52,13 +55,20 @@ const SELECTOR =
   'span[class~="hidden"][class~="w-full"][class~="min-w-0"][class~="flex-col"]' +
   '[class~="items-start"][class~="gap-0.5"][class~="group-hover:flex"]';
 
-document.querySelectorAll(SELECTOR).forEach((el) => {
-  el.classList.remove('hidden');
-  el.classList.add('flex');
-});
+function applyState({ enabled }) {
+  document.querySelectorAll(SELECTOR).forEach((el) => {
+    if (enabled) {
+      el.classList.remove('hidden');
+      el.classList.add('flex');
+    } else {
+      el.classList.add('hidden');
+      el.classList.remove('flex');
+    }
+  });
+}
 ```
 
-Edit `SELECTOR` / the body of `runSnippet` in `src/content.js` to point the
+Edit `SELECTOR` / the body of `applyState` in `src/content.js` to point the
 extension at any other on-page tweak.
 
 ## Local development

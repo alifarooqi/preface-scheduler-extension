@@ -5,9 +5,11 @@
  * 1. Injects a floating, draggable toggle button into a Shadow DOM root
  *    so page CSS (Tailwind etc.) can't bleed into our widget.
  * 2. Reads `enabled` from chrome.storage.sync (default true). When enabled,
- *    waits up to 5s for the target spans to mount, then runs the snippet
- *    below exactly once.
- * 3. Clicking the button (without drag) toggles the persisted state.
+ *    waits up to 5s for the target spans to mount, then applies the
+ *    "shown" state (swap `hidden` -> `flex`) once.
+ * 3. Clicking the button (without drag) toggles the persisted state and
+ *    immediately re-applies: ON removes `hidden` and adds `flex`, OFF
+ *    does the opposite (adds `hidden`, removes `flex`).
  * 4. Dragging the button moves it and persists the position to
  *    chrome.storage.local — per-device, no sync needed.
  */
@@ -16,28 +18,37 @@
   'use strict';
 
   // ---------------------------------------------------------------------------
-  // The snippet the extension runs on the page when enabled.
-  // Tailwind-styled <span> elements that default to `hidden group-hover:flex`
-  // are force-shown by swapping `hidden` -> `flex`.
+  // The DOM tweak the extension applies on the page.
+  // Tailwind-styled <span> elements that default to `hidden group-hover:flex`:
+  //   - when ON  : remove `hidden`, add `flex`  (force-shown)
+  //   - when OFF : add `hidden`,    remove `flex` (back to default hover-only)
+  // The selector intentionally matches the default hidden state so newly
+  // mounted nodes are picked up by either direction without a separate
+  // hookup.
   // ---------------------------------------------------------------------------
   const SELECTOR =
     'span[class~="hidden"][class~="w-full"][class~="min-w-0"][class~="flex-col"]' +
     '[class~="items-start"][class~="gap-0.5"][class~="group-hover:flex"]';
 
-  function runSnippet() {
+  function applyState({ enabled }) {
     const matches = document.querySelectorAll(SELECTOR);
     matches.forEach((el) => {
-      el.classList.remove('hidden');
-      el.classList.add('flex');
+      if (enabled) {
+        el.classList.remove('hidden');
+        el.classList.add('flex');
+      } else {
+        el.classList.add('hidden');
+        el.classList.remove('flex');
+      }
     });
     return matches.length;
   }
 
-  function waitForTargetsAndRun({ timeoutMs = 5000, intervalMs = 50 } = {}) {
+  function waitForTargetsAndRun({ enabled, timeoutMs = 5000, intervalMs = 50 } = {}) {
     return new Promise((resolve) => {
       const start = Date.now();
       const tick = () => {
-        if (runSnippet() > 0) return resolve('matched');
+        if (applyState({ enabled }) > 0) return resolve('matched');
         if (Date.now() - start >= timeoutMs) return resolve('timeout');
         setTimeout(tick, intervalMs);
       };
@@ -247,6 +258,9 @@
       const next = btn.dataset.state !== 'on';
       syncUi(next);
       chrome.storage.sync.set({ [STORAGE_STATE]: next });
+      // Apply the matching DOM tweak immediately so the page reflects the
+      // new state without waiting for a reload.
+      applyState({ enabled: next });
       if (dragging) {
         const m = /translate\(([-\d.]+)px,\s*([-\d.]+)px\)/.exec(host.style.transform);
         if (m) {
@@ -304,7 +318,7 @@
 
     if (enabled) {
       // Fire-and-forget — the snippet is best-effort and one-shot.
-      waitForTargetsAndRun().catch(() => {});
+      waitForTargetsAndRun({ enabled: true }).catch(() => {});
     }
   }
 

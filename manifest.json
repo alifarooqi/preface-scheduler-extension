@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Preface Scheduler",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Force-shows hidden task labels on nomad.preface.ai. Toggle and drag from the in-page widget.",
   "icons": {
     "16": "icons/icon16.png",
@@ -12,12 +12,20 @@
   "action": {
     "default_title": "Preface Scheduler"
   },
-  "permissions": ["storage"],
-  "host_permissions": ["https://nomad.preface.ai/*"],
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "https://nomad.preface.ai/*"
+  ],
   "content_scripts": [
     {
-      "matches": ["https://nomad.preface.ai/*"],
-      "js": ["src/content.js"],
+      "matches": [
+        "https://nomad.preface.ai/*"
+      ],
+      "js": [
+        "src/content.js"
+      ],
       "run_at": "document_idle",
       "all_frames": false
     }

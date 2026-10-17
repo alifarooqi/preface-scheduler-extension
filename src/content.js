@@ -78,16 +78,6 @@
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
 }
 
-.ps-host {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 2147483647;
-  pointer-events: auto;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
 .ps-btn {
   display: inline-flex;
   align-items: center;
@@ -176,7 +166,32 @@
   function buildWidget({ initialEnabled, savedPos }) {
     const host = document.createElement("div");
     host.className = "ps-host";
+    // Positioning MUST live on the host element itself. CSS rules inside
+    // a shadow root (including :host) only apply to that root's internals;
+    // the host node lives outside the shadow tree, so any `position: fixed`
+    // declared via TOGGLE_CSS would silently no-op and the host would render
+    // as an unstyled block at the end of <body>.
+    host.style.cssText = [
+      "position: fixed",
+      "top: 0",
+      "left: 0",
+      "z-index: 2147483647",
+      "pointer-events: auto",
+      "user-select: none",
+      "-webkit-user-select: none",
+      "opacity: 0.35",
+      "transition: opacity 0.18s ease",
+    ].join("; ");
     host.style.transform = `translate(${savedPos.x}px, ${savedPos.y}px)`;
+
+    // Default low opacity; opaque on hover so it stays out of the way
+    // until the cursor lands on it.
+    host.addEventListener("mouseenter", () => {
+      host.style.opacity = "1";
+    });
+    host.addEventListener("mouseleave", () => {
+      host.style.opacity = "0.35";
+    });
 
     const root = host.attachShadow({ mode: "closed" });
 

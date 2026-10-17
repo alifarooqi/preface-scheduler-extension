@@ -9,23 +9,12 @@
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
-  "action": {
-    "default_title": "Preface Scheduler"
-  },
-  "permissions": [
-    "storage"
-  ],
-  "host_permissions": [
-    "https://nomad.preface.ai/*"
-  ],
+  "permissions": ["storage"],
+  "host_permissions": ["https://nomad.preface.ai/*"],
   "content_scripts": [
     {
-      "matches": [
-        "https://nomad.preface.ai/*"
-      ],
-      "js": [
-        "src/content.js"
-      ],
+      "matches": ["https://nomad.preface.ai/*"],
+      "js": ["src/content.js"],
       "run_at": "document_idle",
       "all_frames": false
     }

@@ -7,7 +7,7 @@ Tailwind-styled list-item labels that normally only appear on hover
 turning OFF reverts them.
 
 Control from a floating, draggable widget that lives on the page itself —
-no Chrome toolbar popup required.
+no toolbar icon, no popup.
 
 ```
 +----------------------+
